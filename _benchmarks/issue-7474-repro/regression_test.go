@@ -205,9 +205,10 @@ func BenchmarkSumSteadyState(b *testing.B) {
 	}
 }
 
-// BenchmarkHistogramRecord measures the Record() hot path so the
-// benchmark fairly reports the trade-off the rewrite made: Record gets
-// faster while Collect gets more expensive.
+// BenchmarkHistogramRecord measures the Record() hot path with many series
+// (low lock contention on any given series). Each goroutine round-robins
+// across 10k attribute sets, so #7474's sync.Map+atomics architecture has
+// little to do.
 func BenchmarkHistogramRecord(b *testing.B) {
 	ctx := context.Background()
 	provider, _ := newProvider()
@@ -231,6 +232,31 @@ func BenchmarkHistogramRecord(b *testing.B) {
 		for pb.Next() {
 			h.Record(ctx, 1.0, metric.WithAttributeSet(attrs[i%n]))
 			i++
+		}
+	})
+}
+
+// BenchmarkHistogramRecordContended is the contention-heavy variant: every
+// goroutine hits the same single attribute set, so the v1.39 per-instrument
+// mutex serializes them. This is the workload #7474 was optimizing for.
+func BenchmarkHistogramRecordContended(b *testing.B) {
+	ctx := context.Background()
+	provider, _ := newProvider()
+	defer func() { _ = provider.Shutdown(ctx) }()
+
+	h, err := provider.Meter("benchmark").Float64Histogram("test_histogram")
+	if err != nil {
+		b.Fatal(err)
+	}
+	hot := attribute.NewSet(attribute.String("series_id", "hot"))
+	h.Record(ctx, 1.0, metric.WithAttributeSet(hot))
+
+	runtime.GC()
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			h.Record(ctx, 1.0, metric.WithAttributeSet(hot))
 		}
 	})
 }

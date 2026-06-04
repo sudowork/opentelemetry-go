@@ -25,9 +25,16 @@ with short `PeriodicReader` intervals. See the
 ## What's in here
 
 - `regression_test.go` — `go test`-compatible benchmarks at 1k, 10k, 100k series
-  for histogram and counter aggregations, plus a heap-growth integration test.
+  for histogram and counter aggregations, plus uncontended/contended Record
+  benchmarks and a heap-growth integration test.
 - `go.mod` — pinned to v1.39.0 as the baseline; flip to v1.43.0 (or any v1.40+)
-  to measure the regression.
+  to measure the regression. Add `replace` directives to point at a local
+  checkout of opentelemetry-go with the patch applied to measure that.
+- `cumulative-histogram-collect-fix.patch` — candidate fix against v1.43.0's
+  `sdk/metric/internal/aggregate/histogram.go`. Passes the full upstream
+  `sdk/metric` test suite including `-race`.
+- `results-*.txt` — captured `go test -bench` and `TestHeapGrowth` output
+  for all three configurations.
 
 ## How to reproduce
 
@@ -35,79 +42,115 @@ with short `PeriodicReader` intervals. See the
 # 1. Baseline at v1.39 (last release before the rewrite)
 go test -bench='Benchmark(Histogram|Sum)' -benchmem -benchtime=2x -count=3 -timeout=10m \
   -run=^$ > v1.39.txt
+go test -bench='BenchmarkHistogramRecordContended' -benchmem -benchtime=500ms -count=5 \
+  -run=^$ >> v1.39.txt
+go test -run TestHeapGrowth -v -timeout=10m > v1.39.heap.txt
 
-# 2. Switch to v1.43 (latest as of 2026-06)
+# 2. Switch to unpatched v1.43
 go get go.opentelemetry.io/otel/sdk/metric@v1.43.0 \
        go.opentelemetry.io/otel/metric@v1.43.0 \
        go.opentelemetry.io/otel@v1.43.0
 go mod tidy
+# ... rerun the same go test commands, output to v1.43.txt / v1.43.heap.txt
 
-# 3. Re-run
-go test -bench='Benchmark(Histogram|Sum)' -benchmem -benchtime=2x -count=3 -timeout=10m \
-  -run=^$ > v1.43.txt
+# 3. Switch to patched v1.43
+git clone --depth 1 --branch v1.43.0 https://github.com/open-telemetry/opentelemetry-go.git /tmp/otel-go
+( cd /tmp/otel-go && git apply /path/to/cumulative-histogram-collect-fix.patch )
+go mod edit \
+  -replace=go.opentelemetry.io/otel/sdk/metric=/tmp/otel-go/sdk/metric \
+  -replace=go.opentelemetry.io/otel=/tmp/otel-go \
+  -replace=go.opentelemetry.io/otel/metric=/tmp/otel-go/metric \
+  -replace=go.opentelemetry.io/otel/sdk=/tmp/otel-go/sdk \
+  -replace=go.opentelemetry.io/otel/trace=/tmp/otel-go/trace
+go mod tidy
+# ... rerun the same go test commands, output to v1.43-patched.txt / v1.43-patched.heap.txt
 
 # 4. Compare
 go install golang.org/x/perf/cmd/benchstat@latest
-benchstat v1.39.txt v1.43.txt
-
-# 5. Heap-growth integration test (logs allocation/GC stats across 200 cycles)
-go test -run TestHeapGrowth -v -timeout=10m
+benchstat v1.39.txt v1.43.txt v1.43-patched.txt
 ```
 
 ## What we observed
 
-Run on Linux/amd64, Intel Xeon @ 2.80GHz, Go 1.25.11.
+Run on Linux/amd64 (4 vCPU sandbox), Intel Xeon @ 2.80GHz, Go 1.25.11.
+Three configurations: v1.39.0 baseline, unpatched v1.43.0, and v1.43.0 with
+the candidate fix in `cumulative-histogram-collect-fix.patch` applied.
 
-### Histograms (where production OOMed)
-
-```
-                                   │  v1.39   │             v1.43             │
-                                   │   B/op   │      B/op       vs base       │
-HistogramCollectOnly/series=1000     1.07 MiB    1.93 MiB   ~80% more
-HistogramCollectOnly/series=10000   10.69 MiB   19.23 MiB   ~80% more
-HistogramCollectOnly/series=100000   107 MiB     192 MiB    ~80% more
-HistogramSteadyState/series=1000     165 KiB    1.91 MiB    +1057%  (~12x)
-HistogramSteadyState/series=10000    1.6 MiB    18.7 MiB    +1067%  (~12x)
-HistogramSteadyState/series=100000   16 MiB     187 MiB     +1067%  (~12x)
-
-                                   │  v1.39   │             v1.43             │
-                                   │  sec/op  │     sec/op     vs base        │
-HistogramCollectOnly/series=100000   207 ms     499 ms     +141%
-HistogramSteadyState/series=100000   186 ms     578 ms     +210%
-```
-
-`CollectOnly` primes every series once, then loops on `Collect`. `SteadyState`
-records one new value per series per cycle, then collects — what a 20s
-`PeriodicReader` does in production. The steady-state delta is the headline:
-**~12x more allocated memory per collect cycle on histograms** at every
-cardinality we tested.
-
-### Counters (the case PR #7427 directly targets)
+### Histograms — allocations per Collect cycle
 
 ```
-SumCollectOnly/series=100000   44.6 MiB → 44.6 MiB   no change
-SumSteadyState/series=100000   43.5 MiB → 43.5 MiB   no change
+                                   │  v1.39   │     v1.43      │   v1.43+patch
+                                   │   B/op   │ B/op  vs v1.39 │ B/op  vs v1.39
+HistogramCollectOnly/series=1000     1.07 MiB   1.93 MiB +80%    1.01 MiB  -6%
+HistogramCollectOnly/series=10000   10.69 MiB  19.23 MiB +80%   10.08 MiB  -6%
+HistogramCollectOnly/series=100000   107 MiB     192 MiB +80%    101 MiB   -6%
+HistogramSteadyState/series=1000      165 KiB  1.91 MiB +1057%   39.5 KiB -76%
+HistogramSteadyState/series=10000     1.6 MiB  18.7 MiB +1067%   392 KiB  -76%
+HistogramSteadyState/series=100000   16.0 MiB   187 MiB +1067%   3.8 MiB  -76%
 ```
 
-Counters do not regress in this benchmark. The sums variant of the rewrite
-shipped without a measurable allocation cost; the histogram follow-up
-(#7474) is where the regression bites.
+### Histograms — wall time per Collect cycle
+
+```
+                                   │  v1.39   │      v1.43        │   v1.43+patch
+                                   │  sec/op  │ sec/op   vs v1.39 │ sec/op  vs v1.39
+HistogramCollectOnly/series=100000   172 ms    447 ms    +160%     245 ms   +42%
+HistogramSteadyState/series=100000   145 ms    584 ms    +302%     282 ms   +95%
+```
+
+The unpatched v1.43 takes a ~12x memory hit and a 2.6-4.0x wall-time hit at
+100k series in the steady-state pattern. With the patch applied, allocation
+drops below v1.39 (slot reuse means no per-cycle `BucketCounts` allocation),
+while wall time is still ~95% higher than v1.39 — the patch closes the
+allocation gap entirely but doesn't recover the per-series CPU cost of
+`sync.Map.Range` + atomic loads vs. v1.39's mutex-guarded map iteration.
+
+### Record() hot path — uncontended vs. contended
+
+```
+                              │  v1.39   │    v1.43    │  v1.43+patch
+                              │  ns/op   │ns/op  delta │ ns/op  delta
+HistogramRecord                 21.1 µs    24.1 µs +14%  24.4 µs +16%
+HistogramRecordContended        307 ns     287 ns  -7%    251 ns -18%
+```
+
+`HistogramRecord` runs 4 goroutines round-robining across 10k distinct series
+— low lock contention. `HistogramRecordContended` runs 4 goroutines all
+hitting the _same_ attribute set — maximum contention on the per-instrument
+lock. The contended case is the workload #7474 explicitly optimized for, and
+it does show the expected speedup (~7% unpatched, ~18% patched, modest at 4
+vCPU; the original PR benchmarked on many-core machines).
+
+The patch keeps the contended-Record win and removes the steady-state Collect
+regression.
+
+### Counters
+
+```
+SumCollectOnly/series=100000   44.6 MiB → 44.6 MiB → 44.6 MiB   no change
+SumSteadyState/series=100000   43.5 MiB → 43.5 MiB → 43.5 MiB   no change
+```
+
+Counters never regressed; the patch is a no-op there because
+`metricdata.DataPoint[N]` doesn't carry a per-series slice analogous to
+`BucketCounts`. The structural quirk (`reset(... 0, ...) + append(newPt)`)
+exists in `cumulativeSum.collect` too but doesn't matter for sums because
+there's nothing large to throw away.
 
 ### Heap growth (200 cycles × 100k histogram series)
 
-| Metric                  | v1.39   | v1.43    | Delta              |
-| ----------------------- | ------- | -------- | ------------------ |
-| Total bytes allocated   | 3675 MB | 37666 MB | +925% (10.3x)      |
-| Allocations per cycle   | 18 MB   | 188 MB   | +944% (10.4x)      |
-| GC count                | 13      | 93       | +615% (7.2x)       |
-| Cumulative GC pause     | 1 ms    | 15 ms    | +1400% (15x)       |
-| Wall time               | 42 s    | 75 s     | +78%               |
-| Resident heap (post-GC) | 282 MB  | 266 MB   | similar (expected) |
+| Metric                  | v1.39   | v1.43    | v1.43+patch |
+| ----------------------- | ------- | -------- | ----------- |
+| Total bytes allocated   | 3675 MB | 37666 MB | **1228 MB** |
+| Allocations per cycle   | 18 MB   | 188 MB   | **6 MB**    |
+| GC count                | 13      | 93       | **7**       |
+| Cumulative GC pause     | 1 ms    | 15 ms    | **0 ms**    |
+| Wall time               | 42 s    | 75 s     | 48 s        |
+| Resident heap (post-GC) | 282 MB  | 266 MB   | 266 MB      |
 
-The post-GC resident heap is roughly equal — cumulative aggregation retains
-the same series state on both versions. What changes catastrophically is the
-**allocation rate**, which is what drives GC pressure and OOM in services
-running `PeriodicReader` on a tight interval.
+The patched version allocates 3x less per cycle than v1.39 and triggers half
+the GCs, because `BucketCounts` slices and `Exemplars` are now reused across
+cycles — which v1.39 never did either.
 
 ## Why this matters in production
 
@@ -166,22 +209,29 @@ analogue of `BucketCounts`. The structural quirk is identical; the per-series
 byte cost just isn't large enough to show up. This matches the 0% regression
 on the sum benchmarks above.
 
-## Suggested fix
+## Candidate fix — `cumulative-histogram-collect-fix.patch`
 
-Mirror what the delta path already does. Two adjustments to
-`cumulativeHistogram.collect()`:
+The patch (included in this directory) mirrors what the delta path already does:
 
 1. Pre-size `h.DataPoints` to length `n`, capacity `n` so the per-series
    destination slots exist and can be addressed by index.
 2. Replace the `append(hDPts, newPt)` pattern with an indexed write, and thread
    `&hDPts[i].BucketCounts` (and `&hDPts[i].Exemplars`) into the calls that
-   fill them — the same trick the delta path uses at line 199. The cumulative
-   case has the extra wrinkle that `s.values.Len()` is read concurrently and
-   the iteration count can drift, but that can be handled by capping the index
-   inside `Range` and trimming `hDPts` to `i` at the end.
+   fill them — the same trick the delta path uses at line 199.
+3. Concurrent growth (`s.values.Len()` racing with new inserts mid-Range) falls
+   back to `append` for the extra slots, and the slice is trimmed to the actual
+   iteration count at the end so a shrunk `s.values` doesn't leak stale points.
+4. Slots may be reused across cycles by different series (`sync.Map` iteration
+   order isn't stable), so `Sum`/`Min`/`Max` are explicitly cleared when the
+   instrument is configured with `noSum` / `noMinMax` or the new series has no
+   recorded extrema yet, to avoid leaking values from the previous occupant.
 
-This is a much narrower change than reverting the rewrite, keeps the
-Record-path wins, and addresses the TODO at line 45 of the same file.
+Total diff: ~70 lines in one file. Passes the full upstream `sdk/metric`
+test suite, including `-race`. Numbers above show it eliminates the
+allocation regression entirely and recovers about half the wall-time
+regression. The remaining wall-time gap appears to be the per-series cost
+of `sync.Map.Range` + atomic loads, which would require a different
+follow-up to address.
 
 ## License
 

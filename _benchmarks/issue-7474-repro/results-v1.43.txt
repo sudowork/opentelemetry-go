@@ -1,0 +1,45 @@
+goos: linux
+goarch: amd64
+pkg: github.com/example/otel-metric-regression
+cpu: Intel(R) Xeon(R) Processor @ 2.80GHz
+BenchmarkHistogramCollectOnly/series=1000-4         	       2	   3841929 ns/op	      1000 series	 2021272 B/op	    2010 allocs/op
+BenchmarkHistogramCollectOnly/series=1000-4         	       2	   3231950 ns/op	      1000 series	 2020148 B/op	    2008 allocs/op
+BenchmarkHistogramCollectOnly/series=1000-4         	       2	   2131294 ns/op	      1000 series	 2023936 B/op	    2012 allocs/op
+BenchmarkHistogramCollectOnly/series=10000-4        	       2	  45991431 ns/op	     10000 series	20165440 B/op	   20009 allocs/op
+BenchmarkHistogramCollectOnly/series=10000-4        	       2	  34253565 ns/op	     10000 series	20165528 B/op	   20010 allocs/op
+BenchmarkHistogramCollectOnly/series=10000-4        	       2	  30347864 ns/op	     10000 series	20165528 B/op	   20010 allocs/op
+BenchmarkHistogramCollectOnly/series=100000-4       	       2	1062550471 ns/op	    100000 series	201603992 B/op	  200010 allocs/op
+BenchmarkHistogramCollectOnly/series=100000-4       	       2	 489665665 ns/op	    100000 series	201605076 B/op	  200012 allocs/op
+BenchmarkHistogramCollectOnly/series=100000-4       	       2	 498936983 ns/op	    100000 series	201605028 B/op	  200011 allocs/op
+BenchmarkHistogramSteadyState/series=1000-4         	       2	   2703868 ns/op	      1000 series	 1960752 B/op	    4006 allocs/op
+BenchmarkHistogramSteadyState/series=1000-4         	       2	   1813430 ns/op	      1000 series	 1961764 B/op	    4007 allocs/op
+BenchmarkHistogramSteadyState/series=1000-4         	       2	   2287588 ns/op	      1000 series	 1960728 B/op	    4006 allocs/op
+BenchmarkHistogramSteadyState/series=10000-4        	       2	  28862960 ns/op	     10000 series	19602800 B/op	   40008 allocs/op
+BenchmarkHistogramSteadyState/series=10000-4        	       2	  26775341 ns/op	     10000 series	19601764 B/op	   40007 allocs/op
+BenchmarkHistogramSteadyState/series=10000-4        	       2	  27005015 ns/op	     10000 series	19602800 B/op	   40008 allocs/op
+BenchmarkHistogramSteadyState/series=100000-4       	       2	 732941061 ns/op	    100000 series	196002976 B/op	  400010 allocs/op
+BenchmarkHistogramSteadyState/series=100000-4       	       2	 478901294 ns/op	    100000 series	196000728 B/op	  400006 allocs/op
+BenchmarkHistogramSteadyState/series=100000-4       	       2	 578090565 ns/op	    100000 series	196002800 B/op	  400008 allocs/op
+BenchmarkSumCollectOnly/series=1000-4               	       2	    594356 ns/op	      1000 series	  469904 B/op	    1006 allocs/op
+BenchmarkSumCollectOnly/series=1000-4               	       2	    539886 ns/op	      1000 series	  469904 B/op	    1006 allocs/op
+BenchmarkSumCollectOnly/series=1000-4               	       2	    538272 ns/op	      1000 series	  469904 B/op	    1006 allocs/op
+BenchmarkSumCollectOnly/series=10000-4              	       2	   9571410 ns/op	     10000 series	 4681108 B/op	   10007 allocs/op
+BenchmarkSumCollectOnly/series=10000-4              	       2	   9936871 ns/op	     10000 series	 4681108 B/op	   10007 allocs/op
+BenchmarkSumCollectOnly/series=10000-4              	       2	  10643912 ns/op	     10000 series	 4681432 B/op	   10009 allocs/op
+BenchmarkSumCollectOnly/series=100000-4             	       2	 195252673 ns/op	    100000 series	46803396 B/op	  100010 allocs/op
+BenchmarkSumCollectOnly/series=100000-4             	       2	 172192691 ns/op	    100000 series	46803444 B/op	  100011 allocs/op
+BenchmarkSumCollectOnly/series=100000-4             	       2	 172063020 ns/op	    100000 series	46803160 B/op	  100009 allocs/op
+BenchmarkSumSteadyState/series=1000-4               	       2	    719316 ns/op	      1000 series	  456576 B/op	    3005 allocs/op
+BenchmarkSumSteadyState/series=1000-4               	       2	    650119 ns/op	      1000 series	  456576 B/op	    3005 allocs/op
+BenchmarkSumSteadyState/series=1000-4               	       2	    605090 ns/op	      1000 series	  456340 B/op	    3004 allocs/op
+BenchmarkSumSteadyState/series=10000-4              	       2	  12078044 ns/op	     10000 series	 4560576 B/op	   30005 allocs/op
+BenchmarkSumSteadyState/series=10000-4              	       2	  13814345 ns/op	     10000 series	 4560340 B/op	   30004 allocs/op
+BenchmarkSumSteadyState/series=10000-4              	       2	  13191206 ns/op	     10000 series	 4560340 B/op	   30004 allocs/op
+BenchmarkSumSteadyState/series=100000-4             	       2	 214827071 ns/op	    100000 series	45600576 B/op	  300005 allocs/op
+BenchmarkSumSteadyState/series=100000-4             	       2	 218299188 ns/op	    100000 series	45600340 B/op	  300004 allocs/op
+BenchmarkSumSteadyState/series=100000-4             	       2	 220990057 ns/op	    100000 series	45600340 B/op	  300004 allocs/op
+BenchmarkHistogramRecord-4                          	       2	     41312 ns/op	    1164 B/op	      11 allocs/op
+BenchmarkHistogramRecord-4                          	       2	     53650 ns/op	     988 B/op	      11 allocs/op
+BenchmarkHistogramRecord-4                          	       2	     46712 ns/op	     268 B/op	       9 allocs/op
+PASS
+ok  	github.com/example/otel-metric-regression	30.706s

@@ -1,0 +1,18 @@
+=== RUN   TestHeapGrowth
+    regression_test.go:270: baseline heap_inuse=23MB num_gc=4
+    regression_test.go:283: cycle=0   heap_inuse=473MB heap_alloc=464MB total_alloc=469MB num_gc=4 pause_total_ms=0
+    regression_test.go:283: cycle=20  heap_inuse=622MB heap_alloc=611MB total_alloc=4207MB num_gc=14 pause_total_ms=1
+    regression_test.go:283: cycle=40  heap_inuse=540MB heap_alloc=530MB total_alloc=7946MB num_gc=23 pause_total_ms=3
+    regression_test.go:283: cycle=60  heap_inuse=881MB heap_alloc=867MB total_alloc=11684MB num_gc=31 pause_total_ms=4
+    regression_test.go:283: cycle=80  heap_inuse=760MB heap_alloc=748MB total_alloc=15422MB num_gc=40 pause_total_ms=5
+    regression_test.go:283: cycle=100 heap_inuse=563MB heap_alloc=553MB total_alloc=19161MB num_gc=49 pause_total_ms=7
+    regression_test.go:283: cycle=120 heap_inuse=864MB heap_alloc=850MB total_alloc=22899MB num_gc=57 pause_total_ms=8
+    regression_test.go:283: cycle=140 heap_inuse=700MB heap_alloc=688MB total_alloc=26638MB num_gc=66 pause_total_ms=9
+    regression_test.go:283: cycle=160 heap_inuse=583MB heap_alloc=573MB total_alloc=30376MB num_gc=75 pause_total_ms=11
+    regression_test.go:283: cycle=180 heap_inuse=876MB heap_alloc=863MB total_alloc=34115MB num_gc=83 pause_total_ms=12
+    regression_test.go:283: cycle=199 heap_inuse=697MB heap_alloc=685MB total_alloc=37666MB num_gc=92 pause_total_ms=15
+    regression_test.go:297: === final after forced GC ===
+    regression_test.go:298: heap_inuse=266MB heap_alloc=260MB total_alloc=37666MB num_gc=93 allocs_per_cycle=188MB
+--- PASS: TestHeapGrowth (75.05s)
+PASS
+ok  	github.com/example/otel-metric-regression	75.289s

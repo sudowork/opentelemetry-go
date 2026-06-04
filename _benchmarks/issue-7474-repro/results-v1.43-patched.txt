@@ -1,0 +1,59 @@
+goos: linux
+goarch: amd64
+pkg: github.com/example/otel-metric-regression
+cpu: Intel(R) Xeon(R) Processor @ 2.80GHz
+BenchmarkHistogramCollectOnly/series=1000-4         	       2	    988952 ns/op	      1000 series	 1059888 B/op	    1007 allocs/op
+BenchmarkHistogramCollectOnly/series=1000-4         	       2	   1056394 ns/op	      1000 series	 1059888 B/op	    1007 allocs/op
+BenchmarkHistogramCollectOnly/series=1000-4         	       2	    943458 ns/op	      1000 series	 1059888 B/op	    1007 allocs/op
+BenchmarkHistogramCollectOnly/series=10000-4        	       2	  17307926 ns/op	     10000 series	10565440 B/op	   10009 allocs/op
+BenchmarkHistogramCollectOnly/series=10000-4        	       2	  17703318 ns/op	     10000 series	10566524 B/op	   10011 allocs/op
+BenchmarkHistogramCollectOnly/series=10000-4        	       2	  17341098 ns/op	     10000 series	10567512 B/op	   10011 allocs/op
+BenchmarkHistogramCollectOnly/series=100000-4       	       2	 244245008 ns/op	    100000 series	105603992 B/op	  100010 allocs/op
+BenchmarkHistogramCollectOnly/series=100000-4       	       2	 246834734 ns/op	    100000 series	105603904 B/op	  100009 allocs/op
+BenchmarkHistogramCollectOnly/series=100000-4       	       2	 245308710 ns/op	    100000 series	105603992 B/op	  100010 allocs/op
+BenchmarkHistogramSteadyState/series=1000-4         	       2	   1021742 ns/op	      1000 series	   40492 B/op	    2005 allocs/op
+BenchmarkHistogramSteadyState/series=1000-4         	       2	   1007636 ns/op	      1000 series	   40468 B/op	    2005 allocs/op
+BenchmarkHistogramSteadyState/series=1000-4         	       2	    965848 ns/op	      1000 series	   40468 B/op	    2005 allocs/op
+BenchmarkHistogramSteadyState/series=10000-4        	       2	  15115626 ns/op	     10000 series	  402540 B/op	   20007 allocs/op
+BenchmarkHistogramSteadyState/series=10000-4        	       2	  15294936 ns/op	     10000 series	  400468 B/op	   20005 allocs/op
+BenchmarkHistogramSteadyState/series=10000-4        	       2	  17448479 ns/op	     10000 series	  401504 B/op	   20006 allocs/op
+BenchmarkHistogramSteadyState/series=100000-4       	       2	 282651665 ns/op	    100000 series	 4000468 B/op	  200005 allocs/op
+BenchmarkHistogramSteadyState/series=100000-4       	       2	 274438670 ns/op	    100000 series	 4003576 B/op	  200008 allocs/op
+BenchmarkHistogramSteadyState/series=100000-4       	       2	 282333486 ns/op	    100000 series	 4000468 B/op	  200005 allocs/op
+BenchmarkSumCollectOnly/series=1000-4               	       2	    535497 ns/op	      1000 series	  469904 B/op	    1006 allocs/op
+BenchmarkSumCollectOnly/series=1000-4               	       2	    553006 ns/op	      1000 series	  469904 B/op	    1006 allocs/op
+BenchmarkSumCollectOnly/series=1000-4               	       2	    469598 ns/op	      1000 series	  469904 B/op	    1006 allocs/op
+BenchmarkSumCollectOnly/series=10000-4              	       2	   6730492 ns/op	     10000 series	 4681108 B/op	   10007 allocs/op
+BenchmarkSumCollectOnly/series=10000-4              	       2	   6563147 ns/op	     10000 series	 4681108 B/op	   10007 allocs/op
+BenchmarkSumCollectOnly/series=10000-4              	       2	   6513692 ns/op	     10000 series	 4681108 B/op	   10007 allocs/op
+BenchmarkSumCollectOnly/series=100000-4             	       2	 162741904 ns/op	    100000 series	46803160 B/op	  100009 allocs/op
+BenchmarkSumCollectOnly/series=100000-4             	       2	 160172478 ns/op	    100000 series	46802836 B/op	  100007 allocs/op
+BenchmarkSumCollectOnly/series=100000-4             	       2	 163191606 ns/op	    100000 series	46803308 B/op	  100009 allocs/op
+BenchmarkSumSteadyState/series=1000-4               	       2	    634702 ns/op	      1000 series	  456340 B/op	    3004 allocs/op
+BenchmarkSumSteadyState/series=1000-4               	       2	    577050 ns/op	      1000 series	  456576 B/op	    3005 allocs/op
+BenchmarkSumSteadyState/series=1000-4               	       2	    558958 ns/op	      1000 series	  456576 B/op	    3005 allocs/op
+BenchmarkSumSteadyState/series=10000-4              	       2	   7709762 ns/op	     10000 series	 4560340 B/op	   30004 allocs/op
+BenchmarkSumSteadyState/series=10000-4              	       2	   8114237 ns/op	     10000 series	 4560576 B/op	   30005 allocs/op
+BenchmarkSumSteadyState/series=10000-4              	       2	   8383394 ns/op	     10000 series	 4560576 B/op	   30005 allocs/op
+BenchmarkSumSteadyState/series=100000-4             	       2	 188978644 ns/op	    100000 series	45600812 B/op	  300006 allocs/op
+BenchmarkSumSteadyState/series=100000-4             	       2	 187585188 ns/op	    100000 series	45600576 B/op	  300005 allocs/op
+BenchmarkSumSteadyState/series=100000-4             	       2	 185280661 ns/op	    100000 series	45600576 B/op	  300005 allocs/op
+BenchmarkHistogramRecord-4                          	       2	     51622 ns/op	     764 B/op	      10 allocs/op
+BenchmarkHistogramRecord-4                          	       2	     16920 ns/op	     492 B/op	       9 allocs/op
+BenchmarkHistogramRecord-4                          	       2	     24432 ns/op	     764 B/op	      10 allocs/op
+BenchmarkHistogramRecordContended-4                 	       2	      8124 ns/op	     268 B/op	       9 allocs/op
+BenchmarkHistogramRecordContended-4                 	       2	     28992 ns/op	     268 B/op	       9 allocs/op
+BenchmarkHistogramRecordContended-4                 	       2	     11690 ns/op	     268 B/op	       9 allocs/op
+PASS
+ok  	github.com/example/otel-metric-regression	21.022s
+goos: linux
+goarch: amd64
+pkg: github.com/example/otel-metric-regression
+cpu: Intel(R) Xeon(R) Processor @ 2.80GHz
+BenchmarkHistogramRecordContended-4   	 3907204	       219.8 ns/op	      40 B/op	       2 allocs/op
+BenchmarkHistogramRecordContended-4   	 2594016	       227.4 ns/op	      40 B/op	       2 allocs/op
+BenchmarkHistogramRecordContended-4   	 2342011	       250.5 ns/op	      40 B/op	       2 allocs/op
+BenchmarkHistogramRecordContended-4   	 2549115	       251.4 ns/op	      40 B/op	       2 allocs/op
+BenchmarkHistogramRecordContended-4   	 2538561	       244.3 ns/op	      40 B/op	       2 allocs/op
+PASS
+ok  	github.com/example/otel-metric-regression	4.472s
